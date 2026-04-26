@@ -1,7 +1,43 @@
+import { useRef, useState } from 'react';
 import ChatBox from './components/ChatBox';
 import DataViewer from './components/DataViewer';
 
 function App() {
+  const fileInputRef = useRef(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const text = await file.text();
+      const meetingId = file.name.replace(/\.[^/.]+$/, "") || `m_${Date.now()}`;
+      
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transcript: text, meeting_id: meetingId }),
+      });
+
+      if (!response.ok) throw new Error('Upload failed');
+      
+      // Reload the page to fetch the newly uploaded data
+      window.location.reload(); 
+    } catch (error) {
+      console.error(error);
+      alert('Failed to upload transcript');
+    } finally {
+      setIsUploading(false);
+      e.target.value = '';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[var(--bg-base)] flex flex-col relative overflow-x-hidden">
       {/* Background ambient light effects */}
@@ -23,9 +59,26 @@ function App() {
           </div>
           
           <div className="flex items-center gap-4">
-            {/* Optional upload button for future use */}
-            <button className="text-sm font-medium text-text-muted hover:text-text-main transition-colors px-3 py-1.5 rounded-md hover:bg-surface border border-transparent hover:border-border">
-              Upload Transcript
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={handleFileChange} 
+              className="hidden" 
+              accept=".txt"
+            />
+            <button 
+              onClick={handleUploadClick}
+              disabled={isUploading}
+              className="text-sm font-medium text-text-muted hover:text-text-main transition-colors px-3 py-1.5 rounded-md hover:bg-surface border border-transparent hover:border-border disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {isUploading ? (
+                <>
+                  <div className="w-3 h-3 rounded-full border-2 border-text-muted border-t-primary animate-spin"></div>
+                  Uploading...
+                </>
+              ) : (
+                'Upload Transcript'
+              )}
             </button>
           </div>
         </div>

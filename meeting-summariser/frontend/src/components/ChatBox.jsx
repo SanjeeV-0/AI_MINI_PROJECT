@@ -37,7 +37,7 @@ export default function ChatBox() {
       if (data.error) {
         setMessages((prev) => [...prev, { role: 'bot', content: data.error, isError: true }]);
       } else {
-        setMessages((prev) => [...prev, { role: 'bot', content: data.answer, source: data.source }]);
+        setMessages((prev) => [...prev, { role: 'bot', content: data.answer, source: data.source, usage: data.usage }]);
       }
     } catch (err) {
       setMessages((prev) => [...prev, { role: 'bot', content: 'An error occurred while connecting to the server.', isError: true }]);
@@ -75,8 +75,13 @@ export default function ChatBox() {
               }`}>
                 {msg.content}
                 {msg.source && (
-                  <div className="mt-2 text-[10px] uppercase tracking-wider text-text-muted font-mono opacity-60">
-                    Source: {msg.source}
+                  <div className="mt-2 text-[10px] uppercase tracking-wider text-text-muted font-mono opacity-60 flex justify-between gap-4">
+                    <span>Source: {msg.source}</span>
+                    {msg.usage && (
+                      <span className="text-right" title={`Prompt: ${msg.usage.prompt_tokens} | Completion: ${msg.usage.completion_tokens}`}>
+                        Tokens: {msg.usage.total_tokens} (${msg.usage.cost})
+                      </span>
+                    )}
                   </div>
                 )}
               </div>

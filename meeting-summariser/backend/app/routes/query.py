@@ -31,11 +31,12 @@ def query_data(request: QueryRequest):
 
     context = "\n".join([chunk["text"] for chunk in chunks])
 
-    answer = generate_answer(context, request.question)
+    answer, usage = generate_answer(context, request.question, return_usage=True)
 
     return {
         "source": "rag",
         "question": request.question,
         "answer": answer,
-        "references": list(set([chunk["text"] for chunk in chunks]))
+        "references": list(set([chunk["text"] for chunk in chunks])),
+        "usage": usage
     }
