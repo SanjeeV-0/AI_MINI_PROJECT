@@ -4,16 +4,16 @@ import requests
 from openai import OpenAI
 from dotenv import load_dotenv
 
-# Load environment variables
+
 load_dotenv()
 
-# Initialize the OpenAI client (pointing to OpenRouter just like your backend)
+
 client = OpenAI(
     api_key=os.getenv("OPENROUTER_API_KEY"),
     base_url="https://openrouter.ai/api/v1"
 )
 
-# A small dataset of questions to test your RAG system
+
 TEST_QUESTIONS = [
     "What was the main focus of the marketing team?",
     "Were there any discussions about budget or costs?",
@@ -52,7 +52,7 @@ AI's Generated Answer:
             messages=[{"role": "user", "content": prompt}],
             temperature=0.1
         )
-        # Clean up the response in case the LLM wrapped it in markdown
+        
         content = response.choices[0].message.content.strip()
         if content.startswith("```json"):
             content = content[7:-3].strip()
@@ -74,7 +74,7 @@ def run_evaluation():
     for i, q in enumerate(TEST_QUESTIONS, 1):
         print(f"\n[Test {i}/{len(TEST_QUESTIONS)}] Question: '{q}'")
         
-        # 1. Ask the RAG system
+        # ask the RAG system
         try:
             res = requests.post("http://127.0.0.1:8000/query", json={"question": q})
             try:
@@ -101,7 +101,7 @@ def run_evaluation():
         
         print(f"Answer: {answer}")
         
-        # 2. Evaluate the response using LLM-as-a-judge
+        # 2. evaluate the response using LLM-as-a-judge
         eval_result = evaluate_rag_response(q, answer, context)
         
         if "error" in eval_result:

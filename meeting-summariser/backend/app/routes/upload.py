@@ -1,10 +1,13 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from backend.app.services.extractor import extract_meeting_info
 from backend.app.utils.chunking import chunk_text
 from backend.app.utils.embeddings import get_embeddings
 from backend.app.services.retriever import VectorStore
 from backend.app.services import store
+from backend.app.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 router = APIRouter()
 
@@ -14,40 +17,50 @@ class TranscriptRequest(BaseModel):
 
 @router.post("/upload")
 def upload_transcript(request: TranscriptRequest):
-    text = request.transcript.strip()
+    try:
+        text = request.transcript.strip()
 
-    if not text:
-        return {"error": "Transcript cannot be empty"}
+        if not text:
+            logger.warning(f"Empty transcript received for meeting_id: {request.meeting_id}")
+            return {"error": "Transcript cannot be empty"}
 
-    # Step 1: chunk + embeddings
-    chunks = chunk_text(text)
-    embeddings = get_embeddings(chunks)
+        logger.info(f"Starting upload process for meeting_id: {request.meeting_id}")
 
-    dim = embeddings.shape[1]
+        #  chunk + embeddings
+        chunks = chunk_text(text)
+        embeddings = get_embeddings(chunks)
 
-    # ✅ IMPORTANT: only initialize once
-    if store.vector_store is None:
-        store.vector_store = VectorStore(dim)
+        dim = embeddings.shape[1]
 
-    # Step 2: metadata
-    metadata = [
-        {
-            "type": "discussion",
-            "meeting_id": request.meeting_id
+        
+        if store.vector_store is None:
+            logger.info("Initializing VectorStore.")
+            store.vector_store = VectorStore(dim)
+
+        #  metadata
+        metadata = [
+            {
+                "type": "discussion",
+                "meeting_id": request.meeting_id
+            }
+            for _ in chunks
+        ]
+
+        #  add to vector DB
+        store.vector_store.add(embeddings, chunks, metadata)
+        logger.info(f"Added {len(chunks)} chunks to vector store for meeting_id: {request.meeting_id}")
+
+        # Step 4: structured extraction
+        structured_data = extract_meeting_info(text)
+
+        store.structured_data_store[request.meeting_id] = structured_data
+        logger.info(f"Structured data extraction complete for meeting_id: {request.meeting_id}")
+
+        return {
+            "message": "Processed",
+            "meeting_id": request.meeting_id,
+            "structured_data": structured_data
         }
-        for _ in chunks
-    ]
-
-    # Step 3: add to vector DB
-    store.vector_store.add(embeddings, chunks, metadata)
-
-    # Step 4: structured extraction
-    structured_data = extract_meeting_info(text)
-
-    store.structured_data_store[request.meeting_id] = structured_data
-
-    return {
-        "message": "Processed",
-        "meeting_id": request.meeting_id,
-        "structured_data": structured_data
-    }
+    except Exception as e:
+        logger.error(f"Error uploading transcript for meeting_id {request.meeting_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error during upload")

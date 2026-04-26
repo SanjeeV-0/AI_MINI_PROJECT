@@ -1,5 +1,8 @@
 import os
 from openai import OpenAI
+from backend.app.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 client = OpenAI(
     api_key=os.getenv("OPENROUTER_API_KEY"),
@@ -54,6 +57,7 @@ Answer:
         return content
 
     except Exception as e:
+        logger.error(f"LLM API Call failed: {str(e)}")
         if return_usage:
             return f"Error: {str(e)}", {"total_tokens": 0, "cost": 0.0}
         return f"Error: {str(e)}"
