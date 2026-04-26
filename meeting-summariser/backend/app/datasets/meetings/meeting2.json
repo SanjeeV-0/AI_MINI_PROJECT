@@ -1,0 +1,20 @@
+{
+  "meeting_id": "m2",
+  "segments": [
+    {
+      "text": "The team reviewed the product launch timeline and identified delays in backend integration."
+    },
+    {
+      "text": "It was decided to postpone the product launch by two weeks to ensure stability."
+    },
+    {
+      "text": "Mike will work closely with the engineering team to resolve integration issues."
+    },
+    {
+      "text": "Emma will update stakeholders regarding the revised launch schedule."
+    },
+    {
+      "text": "The discussion also covered risk mitigation strategies and contingency planning."
+    }
+  ]
+}
