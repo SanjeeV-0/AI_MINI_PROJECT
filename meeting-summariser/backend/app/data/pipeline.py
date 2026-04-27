@@ -4,7 +4,7 @@ from backend.app.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-def process_dataset(data_path, limit=3):
+async def process_dataset(data_path, limit=3):
     try:
         meetings = load_meetings(data_path)
         logger.info(f"Found {len(meetings)} meetings. Processing up to {limit}.")
@@ -20,7 +20,7 @@ def process_dataset(data_path, limit=3):
                     meeting_id=meeting_id
                 )
 
-                response = upload_transcript(request)
+                response = await upload_transcript(request)
                 logger.info(f"Processed meeting {meeting_id} successfully.")
             except Exception as e:
                 logger.error(f"Error processing meeting {meeting.get('meeting_id', f'm{i}')}: {str(e)}")

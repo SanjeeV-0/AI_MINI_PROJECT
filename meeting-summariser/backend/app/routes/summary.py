@@ -8,7 +8,7 @@ logger = get_logger(__name__)
 router = APIRouter()
 
 @router.get("/summary")
-def get_summary():
+async def get_summary():
     try:
         logger.info("Generating meeting summary...")
         if store.vector_store is None:
@@ -24,7 +24,7 @@ Summarize the following meeting clearly:
 {context}
 """
 
-        summary = generate_answer(context, prompt)
+        summary = await generate_answer(context, prompt)
         logger.info("Summary generated successfully.")
 
         return {

@@ -14,7 +14,7 @@ class QueryRequest(BaseModel):
     question: str
 
 @router.post("/query")
-def query_data(request: QueryRequest):
+async def query_data(request: QueryRequest):
     try:
         logger.info(f"Received query: '{request.question}'")
         if store.vector_store is None:
@@ -31,22 +31,28 @@ def query_data(request: QueryRequest):
                 "answer": list(store.structured_data_store.values())
             }
 
-        
         query_embedding = get_embeddings([request.question])[0]
 
-        chunks = store.vector_store.search(query_embedding)
+        # Get top-10 chunks from vector search
+        vector_chunks = store.vector_store.search(query_embedding, k=10)
+        docs_to_rerank = [chunk["text"] for chunk in vector_chunks]
 
-        context = "\n".join([chunk["text"] for chunk in chunks])
+        # Rerank using BM25
+        from backend.app.services.hybrid import BM25Retriever
+        bm25_retriever = BM25Retriever(docs_to_rerank)
+        reranked_docs = bm25_retriever.search(request.question, k=3)
 
-        answer, usage = generate_answer(context, request.question, return_usage=True)
+        context = "\n".join(reranked_docs)
+
+        answer, usage = await generate_answer(context, request.question, return_usage=True)
         
-        logger.info(f"Query processed successfully via RAG.")
+        logger.info(f"Query processed successfully via RAG with reranking.")
 
         return {
             "source": "rag",
             "question": request.question,
             "answer": answer,
-            "references": list(set([chunk["text"] for chunk in chunks])),
+            "references": list(set(reranked_docs)),
             "usage": usage
         }
     except Exception as e:

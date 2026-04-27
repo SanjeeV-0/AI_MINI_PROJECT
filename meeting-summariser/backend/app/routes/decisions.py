@@ -8,7 +8,7 @@ logger = get_logger(__name__)
 router = APIRouter()
 
 @router.get("/decisions")
-def get_decisions():
+async def get_decisions():
     try:
         logger.info("Generating key decisions...")
         if store.vector_store is None:
@@ -23,7 +23,7 @@ Extract key decisions made in the meeting:
 {context}
 """
 
-        result = generate_answer(context, prompt)
+        result = await generate_answer(context, prompt)
         logger.info("Decisions generated successfully.")
 
         return {

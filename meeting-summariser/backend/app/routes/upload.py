@@ -16,7 +16,7 @@ class TranscriptRequest(BaseModel):
     meeting_id: str
 
 @router.post("/upload")
-def upload_transcript(request: TranscriptRequest):
+async def upload_transcript(request: TranscriptRequest):
     try:
         text = request.transcript.strip()
 
@@ -51,7 +51,7 @@ def upload_transcript(request: TranscriptRequest):
         logger.info(f"Added {len(chunks)} chunks to vector store for meeting_id: {request.meeting_id}")
 
         # Step 4: structured extraction
-        structured_data = extract_meeting_info(text)
+        structured_data = await extract_meeting_info(text)
 
         store.structured_data_store[request.meeting_id] = structured_data
         logger.info(f"Structured data extraction complete for meeting_id: {request.meeting_id}")

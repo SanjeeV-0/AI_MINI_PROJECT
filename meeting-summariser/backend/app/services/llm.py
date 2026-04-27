@@ -1,19 +1,19 @@
 import os
-from openai import OpenAI
+from openai import AsyncOpenAI
 from backend.app.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-client = OpenAI(
+client = AsyncOpenAI(
     api_key=os.getenv("OPENROUTER_API_KEY"),
     base_url="https://openrouter.ai/api/v1"
 )
 
-def generate_answer(context, question, return_usage=False):
+async def generate_answer(context, question, return_usage=False, response_format=None):
     try:
-        response = client.chat.completions.create(
-            model="openrouter/auto",  # 🔥 THIS FIXES EVERYTHING,
-            messages=[
+        kwargs = {
+            "model": "openrouter/auto",
+            "messages": [
                 {
                     "role": "user",
                     "content": f"""
@@ -32,7 +32,12 @@ Answer:
 """
                 }
             ]
-        )
+        }
+        
+        if response_format:
+            kwargs["response_format"] = response_format
+
+        response = await client.chat.completions.create(**kwargs)
 
         content = response.choices[0].message.content
         
@@ -42,7 +47,6 @@ Answer:
                 prompt_t = usage_data.prompt_tokens
                 comp_t = usage_data.completion_tokens
                 total_t = usage_data.total_tokens
-                # Assuming approximate OpenAI prices for general models:
                 cost = (prompt_t / 1000) * 0.00015 + (comp_t / 1000) * 0.0006
                 usage_dict = {
                     "prompt_tokens": prompt_t,

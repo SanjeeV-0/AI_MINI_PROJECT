@@ -1,10 +1,12 @@
-from fastapi import FastAPI
 from dotenv import load_dotenv
 load_dotenv()
+
+from fastapi import FastAPI
 from backend.app.data.pipeline import process_dataset
 from backend.app.routes import upload, query
 from backend.app.routes import summary, action_items, decisions
 from backend.app.utils.logger import get_logger
+
 
 logger = get_logger(__name__)
 
@@ -17,10 +19,10 @@ app.include_router(action_items.router)
 app.include_router(decisions.router)
 
 @app.on_event("startup")
-def load_data():
+async def load_data():
     logger.info("Starting up API and loading dataset...")
     try:
-        process_dataset("backend/app/datasets/meetings", limit=3)
+        await process_dataset("backend/app/datasets/meetings", limit=3)
         logger.info("Dataset loaded successfully.")
     except Exception as e:
         logger.error(f"Failed to load dataset: {str(e)}")
